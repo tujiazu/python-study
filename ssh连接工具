@@ -7,7 +7,7 @@ from paramiko_expect import SSHClientInteraction
 reload(sys)
 sys.setdefaultencoding('gbk')
 
-PROMPT = '.+>$|.+]$|.+#\s*$|.+\$|.+---- More ----$'
+PROMPT = '.+>$|.+]$|.+#\s*$|.+\$|.+---- More ----$|.+\? $|.+password: $'
 
 def exeSSHCmds(ip, username, password, cmds):
     try:
@@ -20,9 +20,18 @@ def exeSSHCmds(ip, username, password, cmds):
             interact.encoding = "gbk"
             interact.expect(PROMPT, timeout=15)
             for cmd in cmds:
-                interact.send(cmd)
-                interact.expect(PROMPT, timeout=15)
-                cmd_output = cmd_output + cmd +"\r\n"+ interact.current_output_clean
+                if cmd.find("&") !=-1:
+                    interactive_cmds=cmd.split("&")
+                    for interactive_cmd in interactive_cmds:                        
+                        interact.send(interactive_cmd)
+                        interact.expect(PROMPT, timeout=15)
+                        cmd_output = cmd_output + cmd +"\r\n"+ interact.current_output_clean
+                else:
+                    interact.send(cmd)
+                    interact.expect(PROMPT, timeout=15)
+                    cmd_output = cmd_output + cmd +"\r\n"+ interact.current_output_clean
+                    
+
         return cmd_output
     except Exception:
         traceback.print_exc()
@@ -32,4 +41,6 @@ def exeSSHCmds(ip, username, password, cmds):
         except:
             pass
 if __name__ == '__main__':
-    pass
+ 
+    print exeSSHCmds('172.16.1.238', "root", "123456", ["ssh 172.16.1.241&root&ifconfig eth1&exit","ifconfig eth2"])
+
